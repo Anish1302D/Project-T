@@ -21,6 +21,7 @@ jobs:
           pip install -e "./packages/contracts"
           pip install -e "./packages/optimization-core"
           pip install -e "./packages/provider-adapters[openai]"
+          pip install -e "./apps/local-runtime"
       - name: Verify canonical contract parity
         run: python scripts/verify_contracts.py
       - name: Run Pytest suite

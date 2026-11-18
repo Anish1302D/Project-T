@@ -118,9 +118,14 @@ def main() -> int:
             f"Required field mismatch for {def_name}: expected {expected_req}, got {actual_req}"
         )
 
-    # 5. Reference SQL DDL execution check
+    # 5. Reference SQL DDL execution & migration parity check
+    migration_sql_path = ROOT / "infrastructure" / "database" / "sqlite" / "001_initial_schema.sql"
+    sql_text = sql_schema_path.read_text(encoding="utf-8")
+    assert sql_text == migration_sql_path.read_text(encoding="utf-8"), (
+        "SQL migration 001_initial_schema.sql drifted from docs/architecture/schema.sql"
+    )
     conn = sqlite3.connect(":memory:")
-    conn.executescript(sql_schema_path.read_text(encoding="utf-8"))
+    conn.executescript(sql_text)
 
     print("Contract verification passed: JSON Schema, OpenAPI 3.1, Python Pydantic, TypeScript, and SQLite DDL aligned.")
     return 0
