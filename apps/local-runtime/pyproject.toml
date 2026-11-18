@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-t-local-runtime"
+version = "0.2.0"
+description = "Authenticated local-first FastAPI runtime hosting Project T optimization engine and SQLite persistence"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.0",
+    "project-t-contracts>=0.1.0",
+    "project-t-optimization-core>=0.1.0",
+    "project-t-provider-adapters>=0.1.0",
+]
+
+[project.scripts]
+project-t-runtime = "project_t_local_runtime.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
