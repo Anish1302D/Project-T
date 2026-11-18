@@ -23,6 +23,7 @@ testpaths = [
     "packages/provider-adapters/tests",
 ]
 pythonpath = [
+    ".",
     "packages/contracts/src",
     "packages/optimization-core/src",
     "packages/provider-adapters/src",

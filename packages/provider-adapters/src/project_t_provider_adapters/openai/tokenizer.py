@@ -35,6 +35,7 @@ class OpenAITokenizerAdapter:
 
     def __init__(self, *, allow_tiktoken: bool = True) -> None:
         self._allow_tiktoken = allow_tiktoken
+        self._encoding_cache: dict[str, object] = {}
 
     def _resolve_encoding_name(self, model: str) -> str | None:
         normalized = model.strip().lower()
@@ -49,10 +50,13 @@ class OpenAITokenizerAdapter:
         if not self._allow_tiktoken:
             return None
         try:
-            import tiktoken  # type: ignore[import-not-found]
+            encoding = self._encoding_cache.get(encoding_name)
+            if encoding is None:
+                import tiktoken  # type: ignore[import-not-found]
 
-            encoding = tiktoken.get_encoding(encoding_name)
-            return len(encoding.encode(text, disallowed_special=()))
+                encoding = tiktoken.get_encoding(encoding_name)
+                self._encoding_cache[encoding_name] = encoding
+            return len(encoding.encode(text, disallowed_special=()))  # type: ignore[attr-defined]
         except Exception:
             return None
 
