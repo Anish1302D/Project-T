@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-t-optimization-core"
+version = "0.1.0"
+description = "Model-independent, deterministic-first token optimization engine core"
+requires-python = ">=3.12"
+dependencies = [
+    "project-t-contracts>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
