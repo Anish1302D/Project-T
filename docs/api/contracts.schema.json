@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-t.local/schemas/contracts.v1.schema.json",
+  "title": "Project T Canonical Contracts v1",
+  "description": "Canonical Draft 2020-12 JSON Schema definitions shared between Python optimization-core/local-runtime and TypeScript integrations.",
+  "$defs": {
+    "OptimizationMode": {
+      "type": "string",
+      "enum": ["safe", "balanced", "aggressive"],
+      "description": "Policy controlling risk and aggressiveness of optimization without bypassing hard preservation rules."
+    },
+    "ContentType": {
+      "type": "string",
+      "enum": [
+        "prompt",
+        "developer_prompt",
+        "source_code",
+        "json",
+        "documentation",
+        "terminal_output",
+        "conversation",
+        "tool_result"
+      ]
+    },
+    "AccuracyLevel": {
+      "type": "string",
+      "enum": ["exact", "estimated"]
+    },
+    "TokenCountResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "accuracy", "model", "provider"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "accuracy": { "$ref": "#/$defs/AccuracyLevel" },
+        "model": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "minLength": 1 }
+      }
+    },
+    "OptimizationFlags": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deduplicate": { "type": "boolean", "default": true },
+        "semantic_compression": { "type": "boolean", "default": false },
+        "context_filtering": { "type": "boolean", "default": true },
+        "preserve_identifiers": { "type": "boolean", "default": true }
+      }
+    },
+    "OptimizationRequestWire": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content"],
+      "properties": {
+        "content": { "type": "string", "minLength": 1 },
+        "content_type": { "$ref": "#/$defs/ContentType" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "mode": { "$ref": "#/$defs/OptimizationMode", "default": "balanced" },
+        "integration": {
+          "type": "string",
+          "enum": ["vscode", "browser", "mcp", "gateway", "cli", "api"],
+          "default": "api"
+        },
+        "project_id": { "type": "string" },
+        "optimization": { "$ref": "#/$defs/OptimizationFlags" }
+      }
+    },
+    "OptimizationResultWire": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "original_content",
+        "optimized_content",
+        "tokens",
+        "validation",
+        "optimization",
+        "duration_ms",
+        "warnings"
+      ],
+      "properties": {
+        "request_id": { "type": "string", "minLength": 1 },
+        "original_content": { "type": "string" },
+        "optimized_content": { "type": "string" },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["original", "optimized", "saved", "reduction_percentage", "accuracy"],
+          "properties": {
+            "original": { "type": "integer", "minimum": 0 },
+            "optimized": { "type": "integer", "minimum": 0 },
+            "saved": { "type": "integer" },
+            "reduction_percentage": { "type": "number" },
+            "accuracy": { "$ref": "#/$defs/AccuracyLevel" }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "constraints_preserved", "identifiers_preserved"],
+          "properties": {
+            "passed": { "type": "boolean" },
+            "constraints_preserved": { "type": "boolean" },
+            "identifiers_preserved": { "type": "boolean" },
+            "structure_preserved": { "type": "boolean", "default": true },
+            "quality_score": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "optimization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["methods", "mode"],
+          "properties": {
+            "methods": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "mode": { "$ref": "#/$defs/OptimizationMode" }
+          }
+        },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ContentClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "mapped_content_type", "language", "contains_code", "contains_constraints"],
+      "properties": {
+        "type": { "type": "string" },
+        "mapped_content_type": { "$ref": "#/$defs/ContentType" },
+        "language": { "type": "string" },
+        "contains_code": { "type": "boolean" },
+        "contains_constraints": { "type": "boolean" }
+      }
+    },
+    "ExtractedConstraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objectives", "targets", "constraints"],
+      "properties": {
+        "objectives": { "type": "array", "items": { "type": "string" } },
+        "targets": { "type": "array", "items": { "type": "string" } },
+        "constraints": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
