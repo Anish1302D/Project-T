@@ -1,0 +1,774 @@
+openapi: 3.1.0
+info:
+  title: Project T Local Runtime API
+  version: 1.0.0
+  description: >
+    Authenticated local HTTP API for Project T optimization engine, tokenization,
+    context selection, terminal log compression, settings, and metadata-only metrics.
+    Binds exclusively to 127.0.0.1:4765 by default.
+servers:
+  - url: http://127.0.0.1:4765/api/v1
+    description: Default local loopback runtime
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: System
+  - name: Optimization
+  - name: Context
+  - name: Observability
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Runtime health check
+      security: []
+      responses:
+        "200":
+          description: Runtime is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /optimize:
+    post:
+      tags: [Optimization]
+      summary: Optimize prompt, code, docs, conversation, or tool content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptimizationRequestWire"
+      responses:
+        "200":
+          description: Optimization completed (or safely fell back to original content)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationResultWire"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /count:
+    post:
+      tags: [Optimization]
+      summary: Count or estimate tokens using provider-aware adapters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenCountRequest"
+      responses:
+        "200":
+          description: Token count measurement with exact/estimated label
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenCountResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /analyze:
+    post:
+      tags: [Optimization]
+      summary: Classify content and extract constraints & protected spans without mutating
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Content analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /context/select:
+    post:
+      tags: [Context]
+      summary: Select task-relevant files and snippets from an approved workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContextSelectRequest"
+      responses:
+        "200":
+          description: Ranked relevant workspace items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextSelectResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /context/compress:
+    post:
+      tags: [Context]
+      summary: Compress multi-part context items or conversation turns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContextCompressRequest"
+      responses:
+        "200":
+          description: Compressed context with provenance and validation outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationResultWire"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /logs/compress:
+    post:
+      tags: [Context]
+      summary: Compress terminal or test runner output preserving errors and stack frames
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogCompressRequest"
+      responses:
+        "200":
+          description: Compressed terminal output with recoverable original content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationResultWire"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /metrics:
+    get:
+      tags: [Observability]
+      summary: Retrieve aggregated metadata-only usage and savings metrics
+      parameters:
+        - name: integration
+          in: query
+          schema:
+            type: string
+            enum: [vscode, browser, mcp, gateway, cli, api]
+        - name: window_days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+      responses:
+        "200":
+          description: Aggregated token and quality metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricsSummaryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /settings:
+    get:
+      tags: [System]
+      summary: Get local optimization and privacy configuration
+      responses:
+        "200":
+          description: Current local runtime settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [System]
+      summary: Update local optimization and privacy configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimeSettingsUpdate"
+      responses:
+        "200":
+          description: Updated runtime settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /providers:
+    get:
+      tags: [System]
+      summary: List registered providers, models, and tokenizer accuracy capabilities
+      responses:
+        "200":
+          description: Provider registry catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProvidersResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Per-installation cryptographically random local token
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Disallowed Origin/Host or unauthorized workspace path
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    PayloadTooLarge:
+      description: Request exceeds configured body limit
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Request schema validation error (input content redacted)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Local rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    OptimizationMode:
+      type: string
+      enum: [safe, balanced, aggressive]
+
+    ContentType:
+      type: string
+      enum:
+        - prompt
+        - developer_prompt
+        - source_code
+        - json
+        - documentation
+        - terminal_output
+        - conversation
+        - tool_result
+
+    AccuracyLevel:
+      type: string
+      enum: [exact, estimated]
+
+    OptimizationOptions:
+      type: object
+      additionalProperties: false
+      properties:
+        deduplicate:
+          type: boolean
+          default: true
+        semantic_compression:
+          type: boolean
+          default: false
+        context_filtering:
+          type: boolean
+          default: true
+        preserve_identifiers:
+          type: boolean
+          default: true
+
+    OptimizationRequestWire:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+        content_type:
+          $ref: "#/components/schemas/ContentType"
+        provider:
+          type: string
+          default: local
+        model:
+          type: string
+          default: generic
+        mode:
+          $ref: "#/components/schemas/OptimizationMode"
+          default: balanced
+        integration:
+          type: string
+          enum: [vscode, browser, mcp, gateway, cli, api]
+          default: api
+        project_id:
+          type: string
+        optimization:
+          $ref: "#/components/schemas/OptimizationOptions"
+
+    TokenSummary:
+      type: object
+      required: [original, optimized, saved, reduction_percentage, accuracy]
+      properties:
+        original:
+          type: integer
+          minimum: 0
+        optimized:
+          type: integer
+          minimum: 0
+        saved:
+          type: integer
+        reduction_percentage:
+          type: number
+        accuracy:
+          $ref: "#/components/schemas/AccuracyLevel"
+
+    ValidationSummary:
+      type: object
+      required: [passed, constraints_preserved, identifiers_preserved]
+      properties:
+        passed:
+          type: boolean
+        constraints_preserved:
+          type: boolean
+        identifiers_preserved:
+          type: boolean
+        structure_preserved:
+          type: boolean
+          default: true
+        quality_score:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    OptimizationAppliedSummary:
+      type: object
+      required: [methods, mode]
+      properties:
+        methods:
+          type: array
+          items:
+            type: string
+        mode:
+          $ref: "#/components/schemas/OptimizationMode"
+
+    OptimizationResultWire:
+      type: object
+      required:
+        - request_id
+        - original_content
+        - optimized_content
+        - tokens
+        - validation
+        - optimization
+        - duration_ms
+        - warnings
+      properties:
+        request_id:
+          type: string
+        original_content:
+          type: string
+        optimized_content:
+          type: string
+        tokens:
+          $ref: "#/components/schemas/TokenSummary"
+        validation:
+          $ref: "#/components/schemas/ValidationSummary"
+        optimization:
+          $ref: "#/components/schemas/OptimizationAppliedSummary"
+        duration_ms:
+          type: integer
+          minimum: 0
+        warnings:
+          type: array
+          items:
+            type: string
+
+    TokenCountRequest:
+      type: object
+      additionalProperties: false
+      required: [provider, model]
+      properties:
+        text:
+          type: string
+        request_payload:
+          type: object
+          additionalProperties: true
+        provider:
+          type: string
+        model:
+          type: string
+        allow_remote_count:
+          type: boolean
+          default: false
+
+    TokenCountResult:
+      type: object
+      required: [count, accuracy, model, provider]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        accuracy:
+          $ref: "#/components/schemas/AccuracyLevel"
+        model:
+          type: string
+        provider:
+          type: string
+
+    AnalyzeRequest:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+        content_type:
+          $ref: "#/components/schemas/ContentType"
+        provider:
+          type: string
+          default: local
+        model:
+          type: string
+          default: generic
+
+    AnalyzeResponse:
+      type: object
+      required: [classification, constraints, protected_spans, token_estimate]
+      properties:
+        classification:
+          type: object
+          required: [type, language, contains_code, contains_constraints]
+          properties:
+            type:
+              type: string
+            mapped_content_type:
+              $ref: "#/components/schemas/ContentType"
+            language:
+              type: string
+            contains_code:
+              type: boolean
+            contains_constraints:
+              type: boolean
+        constraints:
+          type: object
+          required: [objectives, targets, constraints]
+          properties:
+            objectives:
+              type: array
+              items:
+                type: string
+            targets:
+              type: array
+              items:
+                type: string
+            constraints:
+              type: array
+              items:
+                type: string
+        protected_spans:
+          type: array
+          items:
+            type: object
+            required: [category, value, start, end]
+            properties:
+              category:
+                type: string
+              value:
+                type: string
+              start:
+                type: integer
+              end:
+                type: integer
+        token_estimate:
+          $ref: "#/components/schemas/TokenCountResult"
+
+    ContextSelectRequest:
+      type: object
+      additionalProperties: false
+      required: [task_description, workspace_root]
+      properties:
+        task_description:
+          type: string
+          minLength: 1
+        workspace_root:
+          type: string
+        pinned_files:
+          type: array
+          items:
+            type: string
+          default: []
+        max_files:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 15
+        max_tokens:
+          type: integer
+          minimum: 100
+          default: 8000
+        provider:
+          type: string
+          default: local
+        model:
+          type: string
+          default: generic
+
+    ContextSelectResponse:
+      type: object
+      required: [selected_files, total_tokens, accuracy, warnings]
+      properties:
+        selected_files:
+          type: array
+          items:
+            type: object
+            required: [relative_path, score, reason, estimated_tokens, pinned]
+            properties:
+              relative_path:
+                type: string
+              score:
+                type: number
+              reason:
+                type: string
+              estimated_tokens:
+                type: integer
+              pinned:
+                type: boolean
+        total_tokens:
+          type: integer
+        accuracy:
+          $ref: "#/components/schemas/AccuracyLevel"
+        warnings:
+          type: array
+          items:
+            type: string
+
+    ContextCompressRequest:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [id, content]
+            properties:
+              id:
+                type: string
+              content:
+                type: string
+              content_type:
+                $ref: "#/components/schemas/ContentType"
+              pinned:
+                type: boolean
+                default: false
+        mode:
+          $ref: "#/components/schemas/OptimizationMode"
+          default: balanced
+        provider:
+          type: string
+          default: local
+        model:
+          type: string
+          default: generic
+        project_id:
+          type: string
+
+    LogCompressRequest:
+      type: object
+      additionalProperties: false
+      required: [output]
+      properties:
+        command:
+          type: string
+        exit_code:
+          type: integer
+        output:
+          type: string
+          minLength: 1
+        context_lines:
+          type: integer
+          minimum: 0
+          maximum: 50
+          default: 5
+        provider:
+          type: string
+          default: local
+        model:
+          type: string
+          default: generic
+
+    HealthResponse:
+      type: object
+      required: [status, version, engine_ready, sqlite_ready]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+        engine_ready:
+          type: boolean
+        sqlite_ready:
+          type: boolean
+
+    MetricsSummaryResponse:
+      type: object
+      required:
+        - total_runs
+        - total_original_tokens
+        - total_optimized_tokens
+        - total_tokens_saved
+        - fallback_count
+      properties:
+        total_runs:
+          type: integer
+        total_original_tokens:
+          type: integer
+        total_optimized_tokens:
+          type: integer
+        total_tokens_saved:
+          type: integer
+        median_reduction_percentage:
+          type: number
+        fallback_count:
+          type: integer
+        by_accuracy:
+          type: object
+          additionalProperties:
+            type: integer
+
+    RuntimeSettings:
+      type: object
+      required:
+        - default_mode
+        - preserve_identifiers
+        - allow_ai_semantic_compression
+        - allow_remote_token_counting
+        - cloud_sync_enabled
+        - store_raw_history_locally
+        - local_retention_days
+      properties:
+        default_mode:
+          $ref: "#/components/schemas/OptimizationMode"
+        preserve_identifiers:
+          type: boolean
+        allow_ai_semantic_compression:
+          type: boolean
+        allow_remote_token_counting:
+          type: boolean
+        cloud_sync_enabled:
+          type: boolean
+        store_raw_history_locally:
+          type: boolean
+        local_retention_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+
+    RuntimeSettingsUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        default_mode:
+          $ref: "#/components/schemas/OptimizationMode"
+        preserve_identifiers:
+          type: boolean
+        allow_ai_semantic_compression:
+          type: boolean
+        allow_remote_token_counting:
+          type: boolean
+        cloud_sync_enabled:
+          type: boolean
+        store_raw_history_locally:
+          type: boolean
+        local_retention_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+
+    ProvidersResponse:
+      type: object
+      required: [providers]
+      properties:
+        providers:
+          type: array
+          items:
+            type: object
+            required: [id, display_name, models]
+            properties:
+              id:
+                type: string
+              display_name:
+                type: string
+              models:
+                type: array
+                items:
+                  type: object
+                  required: [model_name, supports_exact_local_count, pricing_version]
+                  properties:
+                    model_name:
+                      type: string
+                    supports_exact_local_count:
+                      type: boolean
+                    pricing_version:
+                      type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            request_id:
+              type: string

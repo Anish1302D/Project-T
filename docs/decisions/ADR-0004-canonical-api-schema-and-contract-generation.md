@@ -1,8 +1,8 @@
 # ADR-0004: Canonical API Schema and Contract Generation
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-18
-- **Review Date:** 2027-01-15
+- **Review Date:** 2027-02-18
 - **Owners:** Project T Architecture
 - **Related Master Doc Sections:** Sections 4, 8, 12, 13, 18
 
@@ -28,9 +28,9 @@ Additionally, Section 12 exhibits a subtle representation difference between the
 2. **Wire Format Standardization:**
    - All HTTP JSON wire payloads (`/api/v1/*`) use **`snake_case`** matching the structured Section 12 HTTP examples (`request_id`, `original_content`, `tokens`, `validation`, `optimization`, `duration_ms`, `warnings`).
    - TypeScript client adapters in `packages/contracts` provide idiomatic **`camelCase` TypeScript types** plus validated transport mappers (converting wire `snake_case` <-> client `camelCase`, or exposing typed DTOs directly) and runtime schema validation (e.g., Zod or AJV) at extension/gateway boundaries.
-3. **Contract Versioning & Generation Workflow:**
+3. **Contract Versioning & Generation/Verification Workflow:**
    - Prefix HTTP endpoints with `/api/v1` and include a `schema_version` / contract compatibility metadata header or field for breaking-change tracking.
-   - Generate or validate Python Pydantic models (`datamodel-code-generator` or CI schema export diff) and TypeScript types (`json-schema-to-typescript` / `openapi-typescript`) in CI so any drift fails the build.
+   - Maintain aligned Python Pydantic v2 models (`packages/contracts/src/project_t_contracts/`) and TypeScript wire/SDK types + runtime validators (`packages/contracts/src/`), verified in CI by `scripts/verify_contracts.py` and `jsonschema` contract tests so any drift between `docs/api/`, `packages/contracts/schemas/`, Python, and TypeScript fails the build.
 4. **Canonical Enum Alignment:**
    - Standardize `ContentType` as the 8-value enum (`prompt`, `developer_prompt`, `source_code`, `json`, `documentation`, `terminal_output`, `conversation`, `tool_result`), mapping internal classifier sub-labels (such as `developer_instruction`) cleanly onto `developer_prompt` + sub-classification metadata.
 

@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-t-contracts"
+version = "0.1.0"
+description = "Canonical Pydantic v2 contracts and JSON Schemas for Project T"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7.0,<3.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

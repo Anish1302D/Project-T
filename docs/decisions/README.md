@@ -13,7 +13,7 @@ Every ADR documents **Context**, **Decision**, **Alternatives Considered**, **Co
 | ADR-0001 | Monorepo and Workspace Tooling | Accepted | 2027-02-18 | [ADR-0001](./ADR-0001-monorepo-and-workspace-tooling.md) |
 | ADR-0002 | Python Optimization Engine and TypeScript Integration Layer | Accepted | 2027-02-18 | [ADR-0002](./ADR-0002-python-engine-and-typescript-integrations.md) |
 | ADR-0003 | Local Runtime Transport and Authentication | Accepted | 2027-02-18 | [ADR-0003](./ADR-0003-local-runtime-transport-and-auth.md) |
-| ADR-0004 | Canonical API Schema and Contract Generation | Proposed | 2027-01-15 | [ADR-0004](./ADR-0004-canonical-api-schema-and-contract-generation.md) |
+| ADR-0004 | Canonical API Schema and Contract Generation | Accepted | 2027-02-18 | [ADR-0004](./ADR-0004-canonical-api-schema-and-contract-generation.md) |
 | ADR-0005 | Tokenizer Adapter Interface and Exact/Estimated Labeling | Accepted | 2027-02-18 | [ADR-0005](./ADR-0005-tokenizer-adapter-and-accuracy-labeling.md) |
 | ADR-0006 | Optimization Pipeline Ordering and Fallback Policy | Accepted | 2027-02-18 | [ADR-0006](./ADR-0006-pipeline-ordering-and-fallback-policy.md) |
 | ADR-0007 | Protected-Span and Constraint-Preservation Strategy | Accepted | 2027-02-18 | [ADR-0007](./ADR-0007-protected-spans-and-constraint-preservation.md) |

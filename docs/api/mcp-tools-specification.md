@@ -48,7 +48,7 @@
 
 ### 3.2 `analyze_context`
 - **Arguments:** `content` (`string`, required), `content_type` (`ContentType`, optional), `provider`, `model`.
-- **Returns:** `classification`, `constraints` (`objectives`, `targets`, `prohibitions`), `protected_spans[]`, `token_estimate`.
+- **Returns:** `classification`, `constraints` (`objectives`, `targets`, `constraints`), `protected_spans[]`, `token_estimate`.
 
 ### 3.3 `compress_terminal_output`
 - **Arguments:** `output` (`string`, required), `command` (`string`, optional), `exit_code` (`integer`, optional), `context_lines` (`integer`, default `5`, range `0..50`), `provider`, `model`.
