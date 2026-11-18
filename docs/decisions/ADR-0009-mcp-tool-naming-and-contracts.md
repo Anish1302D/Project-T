@@ -1,6 +1,6 @@
 # ADR-0009: MCP Tool Naming and Contracts
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-18
 - **Review Date:** 2027-02-18
 - **Owners:** Project T Architecture
