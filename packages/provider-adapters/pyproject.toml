@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-t-provider-adapters"
+version = "0.1.0"
+description = "Provider-specific tokenizer adapters, request serializers, and versioned model/pricing registry"
+requires-python = ">=3.12"
+dependencies = [
+    "project-t-contracts>=0.1.0",
+]
+
+[project.optional-dependencies]
+openai = [
+    "tiktoken>=0.7.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

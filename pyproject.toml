@@ -19,8 +19,12 @@ dev = [
 testpaths = [
     "tests",
     "packages/contracts/tests",
+    "packages/optimization-core/tests",
+    "packages/provider-adapters/tests",
 ]
 pythonpath = [
     "packages/contracts/src",
+    "packages/optimization-core/src",
+    "packages/provider-adapters/src",
 ]
 addopts = "-ra -q"
