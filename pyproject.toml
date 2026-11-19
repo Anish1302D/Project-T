@@ -29,5 +29,6 @@ pythonpath = [
     "packages/provider-adapters/src",
     "apps/local-runtime/src",
     "apps/api-gateway/src",
+    "services/src",
 ]
 addopts = "-ra -q"

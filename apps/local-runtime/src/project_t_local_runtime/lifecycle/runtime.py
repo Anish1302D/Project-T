@@ -180,6 +180,65 @@ class LocalRuntimeService:
     def close(self) -> None:
         self.db.close()
 
+    def build_metadata_sync_payload(self, *, limit: int = 250) -> dict[str, object]:
+        """Build strictly metadata-only sync payload (never includes raw text, code, or file paths)."""
+        return {
+            "installation_id": self.credentials.installation_id,
+            "runs": self.db.export_syncable_runs(limit=limit),
+        }
+
+    def sync_metadata_to_cloud(
+        self,
+        *,
+        cloud_base_url: str | None = None,
+        sync_token: str | None = None,
+        opt_in: bool = False,
+        post_json_fn: object | None = None,
+        limit: int = 250,
+    ) -> dict[str, object]:
+        """
+        Opt-in metadata synchronization.
+
+        Disabled by default (`opt_in=False`) and fails gracefully when cloud is offline
+        so local optimization never depends on remote connectivity.
+        """
+        if not opt_in or not cloud_base_url or not sync_token:
+            return {"synced": False, "reason": "sync_disabled_or_unconfigured", "upserted": 0}
+
+        payload = self.build_metadata_sync_payload(limit=limit)
+        endpoint = f"{cloud_base_url.rstrip('/')}/api/cloud/v1/sync/runs"
+        try:
+            if callable(post_json_fn):
+                status_code, resp_data = post_json_fn(endpoint, payload, sync_token)
+                return {
+                    "synced": 200 <= int(status_code) < 300,
+                    "status_code": int(status_code),
+                    "response": resp_data,
+                }
+
+            import json
+            import urllib.request
+
+            req = urllib.request.Request(
+                endpoint,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {sync_token}",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=3.0) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                return {"synced": True, "status_code": resp.status, "response": body}
+        except Exception as exc:
+            return {
+                "synced": False,
+                "reason": "cloud_unreachable",
+                "error_type": type(exc).__name__,
+                "upserted": 0,
+            }
+
     def _validate_workspace_root(self, workspace_root: str) -> Path:
         if not self.config.approved_workspaces:
             raise WorkspaceForbiddenError("No approved workspaces configured for context selection.")

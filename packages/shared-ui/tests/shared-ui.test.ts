@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { OPTIMIZATION_MODE_DESCRIPTORS, buildPreviewViewModel } from "../src/index.js";
+import {
+  OPTIMIZATION_MODE_DESCRIPTORS,
+  buildPreviewViewModel,
+  formatTokenCount,
+  formatUsdCost
+} from "../src/index.js";
 
 describe("@project-t/shared-ui", () => {
   it("exposes all three optimization modes", () => {
@@ -27,5 +32,11 @@ describe("@project-t/shared-ui", () => {
     });
     expect(vm.fallbackTriggered).toBe(true);
     expect(vm.accuracyLabel).toBe("Estimated count");
+  });
+
+  it("formats token numbers and USD cost figures conservatively", () => {
+    expect(formatTokenCount(12450)).toBe("12,450");
+    expect(formatUsdCost(0.0042)).toBe("$0.0042");
+    expect(formatUsdCost(1.5)).toBe("$1.50");
   });
 });

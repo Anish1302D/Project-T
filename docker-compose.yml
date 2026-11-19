@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-projectt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-projectt_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-projectt_cloud}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - project_t_pgdata:/var/lib/postgresql/data
+      - ./infrastructure/database/postgres/001_initial_cloud_schema.sql:/docker-entrypoint-initdb.d/001_initial_cloud_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-projectt} -d ${POSTGRES_DB:-projectt_cloud}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  control-plane:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/control-plane.Dockerfile
+    environment:
+      CLOUD_HOST: 0.0.0.0
+      CLOUD_PORT: "4780"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-projectt}:${POSTGRES_PASSWORD:-projectt_dev_password}@postgres:5432/${POSTGRES_DB:-projectt_cloud}
+      REDIS_URL: redis://redis:6379/0
+      PROJECT_T_JWT_SECRET: ${PROJECT_T_JWT_SECRET:-local-dev-change-this-secret-key-before-prod}
+      DASHBOARD_ORIGIN: http://127.0.0.1:4173,http://localhost:4173
+    ports:
+      - "127.0.0.1:4780:4780"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4780/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/dashboard.Dockerfile
+    ports:
+      - "127.0.0.1:4173:80"
+    depends_on:
+      control-plane:
+        condition: service_healthy
+
+volumes:
+  project_t_pgdata:

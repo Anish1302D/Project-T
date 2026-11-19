@@ -23,6 +23,7 @@ jobs:
           pip install -e "./packages/provider-adapters[openai]"
           pip install -e "./apps/local-runtime"
           pip install -e "./apps/api-gateway"
+          pip install -e "./services"
       - name: Verify canonical contract parity
         run: python scripts/verify_contracts.py
       - name: Run Pytest suite
@@ -44,6 +45,7 @@ jobs:
           pip install -e "./packages/provider-adapters[openai]"
           pip install -e "./apps/local-runtime"
           pip install -e "./apps/api-gateway"
+          pip install -e "./services"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -57,7 +59,8 @@ jobs:
           pnpm turbo run typecheck
           pnpm turbo run build
           pnpm turbo run test
-      - name: Install Playwright Chromium & run browser extension E2E
+      - name: Install Playwright Chromium & run E2E suites
         run: |
           pnpm exec playwright install chromium
           pnpm run test:e2e
+          pnpm run test:e2e:dashboard

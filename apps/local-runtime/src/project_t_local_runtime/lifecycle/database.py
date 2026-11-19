@@ -391,6 +391,80 @@ class LocalDatabase:
             self._conn.commit()
             return cur.rowcount
 
+    def export_syncable_runs(self, *, limit: int = 250) -> list[dict[str, object]]:
+        """
+        Export strictly metadata-only optimization run summaries eligible for opt-in cloud sync.
+
+        Excludes raw prompts, optimized content, source code, file paths, and local content hashes.
+        """
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT
+                    r.id AS run_id,
+                    r.request_id,
+                    COALESCE(r.provider_id, 'local') AS provider,
+                    COALESCE(mo.model_name, 'generic') AS model,
+                    r.integration,
+                    r.content_type,
+                    r.optimization_mode,
+                    r.status,
+                    r.methods_json,
+                    r.warnings_json,
+                    r.quality_score,
+                    r.duration_ms,
+                    r.created_at,
+                    m.original_tokens,
+                    m.optimized_tokens,
+                    m.tokens_saved,
+                    m.reduction_percentage,
+                    m.accuracy,
+                    m.provider_confirmed_original_tokens,
+                    m.provider_confirmed_input_tokens,
+                    c.pricing_version,
+                    COALESCE(c.estimated_cost_avoided_usd, 0.0) AS estimated_cost_avoided_usd,
+                    c.provider_confirmed_cost_avoided_usd
+                FROM optimization_runs r
+                LEFT JOIN models mo ON mo.id = r.model_id
+                JOIN token_metrics m ON m.run_id = r.id
+                LEFT JOIN cost_metrics c ON c.run_id = r.id
+                ORDER BY r.created_at DESC
+                LIMIT ?
+                """,
+                (max(1, limit),),
+            ).fetchall()
+
+        exported: list[dict[str, object]] = []
+        for row in rows:
+            exported.append(
+                {
+                    "run_id": row["run_id"],
+                    "request_id": row["request_id"],
+                    "provider": row["provider"],
+                    "model": row["model"],
+                    "integration": row["integration"],
+                    "content_type": row["content_type"],
+                    "optimization_mode": row["optimization_mode"],
+                    "status": row["status"],
+                    "methods": json.loads(row["methods_json"] or "[]"),
+                    "warnings": json.loads(row["warnings_json"] or "[]"),
+                    "quality_score": row["quality_score"],
+                    "duration_ms": int(row["duration_ms"]),
+                    "created_at": str(row["created_at"]),
+                    "original_tokens": int(row["original_tokens"]),
+                    "optimized_tokens": int(row["optimized_tokens"]),
+                    "tokens_saved": int(row["tokens_saved"]),
+                    "reduction_percentage": float(row["reduction_percentage"]),
+                    "accuracy": row["accuracy"],
+                    "provider_confirmed_original_tokens": row["provider_confirmed_original_tokens"],
+                    "provider_confirmed_input_tokens": row["provider_confirmed_input_tokens"],
+                    "pricing_version": row["pricing_version"],
+                    "estimated_cost_avoided_usd": float(row["estimated_cost_avoided_usd"]),
+                    "provider_confirmed_cost_avoided_usd": row["provider_confirmed_cost_avoided_usd"],
+                }
+            )
+        return exported
+
     def close(self) -> None:
         with self._lock:
             self._conn.close()
