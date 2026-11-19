@@ -1,0 +1,142 @@
+{
+  "name": "@project-t/vscode-extension",
+  "displayName": "Project T Token Optimizer",
+  "description": "Local-first, quality-aware prompt optimization, workspace file relevance analysis, and terminal output compression for VS Code.",
+  "version": "0.3.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "publisher": "project-t",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "projectT.optimizeSelection",
+        "title": "Project T: Optimize Selected Text"
+      },
+      {
+        "command": "projectT.restoreLastOriginal",
+        "title": "Project T: Restore Last Original Text"
+      },
+      {
+        "command": "projectT.analyzeSelection",
+        "title": "Project T: Analyze Selected Prompt / Context"
+      },
+      {
+        "command": "projectT.selectRelevantFiles",
+        "title": "Project T: Analyze Workspace File Relevance"
+      },
+      {
+        "command": "projectT.compressTerminalOutput",
+        "title": "Project T: Compress Selected Terminal Output"
+      },
+      {
+        "command": "projectT.checkRuntimeHealth",
+        "title": "Project T: Check Local Runtime Health"
+      },
+      {
+        "command": "projectT.configureToken",
+        "title": "Project T: Configure Local Runtime Token"
+      },
+      {
+        "command": "projectT.refreshSidebar",
+        "title": "Project T: Refresh Status & Metrics"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "projectT.optimizeSelection",
+          "when": "editorHasSelection",
+          "group": "projectT@1"
+        },
+        {
+          "command": "projectT.analyzeSelection",
+          "when": "editorHasSelection",
+          "group": "projectT@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "projectT.refreshSidebar",
+          "when": "view == projectT.overview",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectT",
+          "title": "Project T",
+          "icon": "$(sparkle)"
+        }
+      ]
+    },
+    "views": {
+      "projectT": [
+        {
+          "id": "projectT.overview",
+          "name": "Token Optimizer"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Project T",
+      "properties": {
+        "projectT.runtimeUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:4765/api/v1",
+          "description": "Loopback URL of the authenticated Project T Local Runtime API."
+        },
+        "projectT.defaultMode": {
+          "type": "string",
+          "enum": [
+            "safe",
+            "balanced",
+            "aggressive"
+          ],
+          "default": "balanced",
+          "description": "Default optimization mode (never bypasses constraint or identifier preservation)."
+        },
+        "projectT.defaultProvider": {
+          "type": "string",
+          "default": "local",
+          "description": "Default target provider for token counting and optimization."
+        },
+        "projectT.defaultModel": {
+          "type": "string",
+          "default": "generic",
+          "description": "Default target model for token counting and optimization."
+        },
+        "projectT.preserveIdentifiers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lock code symbols, file paths, versions, and API endpoints during optimization."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@project-t/contracts": "workspace:*",
+    "@project-t/shared-ui": "workspace:*",
+    "@project-t/shared-utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.28.2"
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --sourcemap",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

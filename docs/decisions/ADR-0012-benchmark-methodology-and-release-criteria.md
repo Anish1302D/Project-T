@@ -1,7 +1,8 @@
 # ADR-0012: Benchmark Methodology and Release Acceptance Criteria
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-18
+- **Ratified:** 2026-11-19 (Phase 10 — 8-category benchmark runner and paired invariant audit verified)
 - **Review Date:** 2027-02-18
 - **Owners:** Project T Architecture
 - **Related Master Doc Sections:** Sections 7.8, 7.9, 16, 19, 20, 23
@@ -79,4 +80,7 @@ Furthermore, the internal diagnostic quality formula `Q = 0.35I + 0.25C + 0.20S 
 
 ## Review Triggers
 
-- Review on **2027-02-18** once Week 3 benchmark runner produces initial baseline datasets and reference hardware latency profiles.
+- Reviewed and accepted in Phase 10 (**2026-11-19**):
+  - `benchmarks/runner/run_benchmarks.py` covers all 8 categories (`prompt`, `constraint`, `code`, `repository`, `log`, `conversation`, `api`, `latency`) across 26 cases (`baseline-report.md`: 100% assertion/constraint/identifier preservation, eligible median reductions `45.95%` prompt, `69.48%` log, `25.55%` conversation, `16.66%` repository, `15.09%` api, `p95 <= 5.69 ms`).
+  - `benchmarks/evaluation/paired_evaluator.py` verifies 21 paired cases offline (`15.78%` eligible median reduction, `0` objective degradations, `0` negative-savings accepted) and confirms `allow_ai_semantic_compression=False` and `pgvector` deferred remain safe defaults. Live commercial LLM grading requires user-supplied provider API keys.
+- Next scheduled review: **2027-02-18**.

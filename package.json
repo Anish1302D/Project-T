@@ -1,0 +1,26 @@
+{
+  "name": "project-t",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Project T — Model-independent, local-first, quality-aware token optimization platform",
+  "packageManager": "pnpm@12.21.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "node tests/e2e/browser-extension.e2e.mjs",
+    "test:e2e:dashboard": "node tests/e2e/dashboard.e2e.mjs",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.1",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

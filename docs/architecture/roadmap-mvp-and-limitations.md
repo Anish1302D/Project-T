@@ -81,15 +81,15 @@
 A developer can submit text to the Local Runtime API (`http://127.0.0.1:4765/api/v1/optimize`), receive an optimized candidate, inspect exactly what transformations occurred, view token savings with accuracy labeling, and recover the unmodified original content.
 
 ### Definition of Done Checklist
-- [ ] Local runtime starts on `127.0.0.1:4765` and exposes `GET /api/v1/health`.
-- [ ] `POST /api/v1/optimize` accepts a schema-validated request and enforces bearer auth + CORS/origin rules.
-- [ ] Original content is always recoverable from the result/client flow.
-- [ ] Every transformation method applied is recorded in `optimization.methods[]`.
-- [ ] Token counts explicitly distinguish `"exact"` vs. `"estimated"`.
-- [ ] Constraint preservation and protected-identifier tests pass at 100% on curated fixtures.
-- [ ] Validation failure and non-positive/negligible savings paths cleanly return the original content.
-- [ ] Benchmark runner (`benchmarks/runner/`) produces reproducible JSON/Markdown reports.
-- [ ] Documentation clearly explains current limitations (below).
+- [x] Local runtime starts on `127.0.0.1:4765` and exposes `GET /api/v1/health`.
+- [x] `POST /api/v1/optimize` accepts a schema-validated request and enforces bearer auth + CORS/origin rules.
+- [x] Original content is always recoverable from the result/client flow.
+- [x] Every transformation method applied is recorded in `optimization.methods[]`.
+- [x] Token counts explicitly distinguish `"exact"` vs. `"estimated"`.
+- [x] Constraint preservation and protected-identifier tests pass at 100% on curated fixtures.
+- [x] Validation failure and non-positive/negligible savings paths cleanly return the original content.
+- [x] Benchmark runner (`benchmarks/runner/`) produces reproducible JSON/Markdown reports.
+- [x] Documentation clearly explains current limitations (below).
 
 ### Recommended 12-Step Sequence
 1. Initialize repository and workspace tooling (`pnpm`, `Turborepo`, `pyproject.toml`, CI).
@@ -111,7 +111,7 @@ A developer can submit text to the Local Runtime API (`http://127.0.0.1:4765/api
 
 Per Section 2 and Section 20 ("Documentation explains current limitations"):
 
-1. **Pre-implementation status:** The repository currently holds the architectural specifications, schemas, and ADRs in `docs/`; runtime packages, extensions, and empirical benchmark numbers are not yet implemented or measured.
+1. **Measured Release Capabilities & Evaluation Scope (`v1.0.0`):** All core packages (`contracts`, `optimization-core`, `provider-adapters`), local/cloud services (`local-runtime`, `api-gateway`, `services/`), and client apps (`vscode-extension`, `mcp-server`, `browser-extension`, `dashboard`) are implemented and verified in CI. Across the 8-category baseline benchmark ([baseline-report.md](../../benchmarks/reports/baseline-report.md), 26 cases on `Windows-11` / Python `3.14.7`), assertion, constraint, and identifier preservation rates are `100.0%` with eligible median token reductions of `45.95%` (prompt), `69.48%` (log), `25.55%` (conversation), `16.66%` (repository), and `15.09%` (api) at `p95 <= 5.69 ms`. The offline paired audit ([paired-evaluation-report.md](../../benchmarks/reports/paired-evaluation-report.md), 21 cases) confirms `15.78%` eligible median reduction with `0` objective degradations and `allow_ai_semantic_compression=False` by default. Live external commercial LLM trials and `docker compose up` integration depend on external provider API keys and an active Docker daemon respectively.
 2. **Browser extension boundaries:** Operates only on user-triggered prompts inside explicitly supported web UIs (ChatGPT, Claude, Gemini). It cannot rewrite hidden server-side system prompts, background conversation history, or arbitrary `<all_urls>` text inputs.
 3. **IDE & MCP traffic boundaries:** Neither the VS Code extension nor the MCP server can intercept or rewrite internal network requests made by unrelated third-party AI extensions.
 4. **IDE compatibility claims:** Support for Antigravity, Cursor, Windsurf, or other agentic IDEs must be validated empirically against their current extension and MCP APIs before being advertised.

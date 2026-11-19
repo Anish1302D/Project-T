@@ -494,7 +494,7 @@ components:
               type: boolean
         constraints:
           type: object
-          required: [objectives, targets, prohibitions]
+          required: [objectives, targets, constraints]
           properties:
             objectives:
               type: array
@@ -504,7 +504,7 @@ components:
               type: array
               items:
                 type: string
-            prohibitions:
+            constraints:
               type: array
               items:
                 type: string
