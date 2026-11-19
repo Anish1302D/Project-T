@@ -17,11 +17,11 @@ Every ADR documents **Context**, **Decision**, **Alternatives Considered**, **Co
 | ADR-0005 | Tokenizer Adapter Interface and Exact/Estimated Labeling | Accepted | 2027-02-18 | [ADR-0005](./ADR-0005-tokenizer-adapter-and-accuracy-labeling.md) |
 | ADR-0006 | Optimization Pipeline Ordering and Fallback Policy | Accepted | 2027-02-18 | [ADR-0006](./ADR-0006-pipeline-ordering-and-fallback-policy.md) |
 | ADR-0007 | Protected-Span and Constraint-Preservation Strategy | Accepted | 2027-02-18 | [ADR-0007](./ADR-0007-protected-spans-and-constraint-preservation.md) |
-| ADR-0008 | Local SQLite Schema and Cloud PostgreSQL Sync Boundaries | Proposed | 2027-03-01 | [ADR-0008](./ADR-0008-sqlite-local-and-postgresql-cloud-sync-boundaries.md) |
+| ADR-0008 | Local SQLite Schema and Cloud PostgreSQL Sync Boundaries | Accepted | 2027-03-01 | [ADR-0008](./ADR-0008-sqlite-local-and-postgresql-cloud-sync-boundaries.md) |
 | ADR-0009 | MCP Tool Naming and Contracts | Accepted | 2027-02-18 | [ADR-0009](./ADR-0009-mcp-tool-naming-and-contracts.md) |
 | ADR-0010 | Browser Permissions and Supported Website Adapter Strategy | Accepted | 2027-03-01 | [ADR-0010](./ADR-0010-browser-permissions-and-site-adapters.md) |
 | ADR-0011 | Privacy, Telemetry, Retention, and Content Storage | Accepted | 2027-02-18 | [ADR-0011](./ADR-0011-privacy-telemetry-retention-and-storage.md) |
-| ADR-0012 | Benchmark Methodology and Release Acceptance Criteria | Proposed | 2027-02-18 | [ADR-0012](./ADR-0012-benchmark-methodology-and-release-criteria.md) |
+| ADR-0012 | Benchmark Methodology and Release Acceptance Criteria | Accepted | 2027-02-18 | [ADR-0012](./ADR-0012-benchmark-methodology-and-release-criteria.md) |
 
 ---
 
