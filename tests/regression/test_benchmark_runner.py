@@ -24,7 +24,7 @@ def test_benchmark_suite_meets_phase_3_engine_targets(tmp_path: Path) -> None:
     assert statistics.median(eligible_reductions) >= 15.0
 
     # High-redundancy eligible categories achieve >= 15% median reduction individually
-    for eligible_cat in ("prompt", "log", "conversation", "repository"):
+    for eligible_cat in ("prompt", "log", "conversation", "repository", "api"):
         assert by_cat[eligible_cat]["median_reduction_pct_eligible"] >= 15.0
 
     # Small-input local latency meets < 100 ms target

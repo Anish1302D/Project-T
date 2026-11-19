@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-t-api-gateway"
+version = "0.5.0"
+description = "Model-independent token optimization API gateway with streaming and provider usage reconciliation"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.0",
+    "httpx>=0.27.0",
+    "project-t-contracts>=0.1.0",
+    "project-t-optimization-core>=0.1.0",
+    "project-t-provider-adapters>=0.1.0",
+    "project-t-local-runtime>=0.2.0",
+]
+
+[project.scripts]
+project-t-gateway = "project_t_api_gateway.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

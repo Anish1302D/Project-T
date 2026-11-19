@@ -207,6 +207,82 @@ class LocalDatabase:
             self._conn.commit()
         return run_id
 
+    def record_provider_usage(
+        self,
+        *,
+        run_id: str,
+        provider_confirmed_input_tokens: int | None,
+        provider_confirmed_original_tokens: int | None = None,
+        pricing_version: str | None = None,
+        estimated_cost_avoided_usd: float = 0.0,
+        provider_confirmed_cost_avoided_usd: float | None = None,
+    ) -> None:
+        """Attach provider-reported input tokens and versioned cost attribution to a run."""
+        cost_id = f"cost_{uuid.uuid4().hex[:16]}"
+        with self._lock:
+            self._conn.execute(
+                """
+                UPDATE token_metrics
+                SET provider_confirmed_original_tokens = COALESCE(?, provider_confirmed_original_tokens),
+                    provider_confirmed_input_tokens = COALESCE(?, provider_confirmed_input_tokens)
+                WHERE run_id = ?
+                """,
+                (
+                    provider_confirmed_original_tokens,
+                    provider_confirmed_input_tokens,
+                    run_id,
+                ),
+            )
+            if pricing_version is not None:
+                self._conn.execute(
+                    """
+                    INSERT INTO cost_metrics (
+                        id, run_id, pricing_version,
+                        estimated_cost_avoided_usd, provider_confirmed_cost_avoided_usd
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        cost_id,
+                        run_id,
+                        pricing_version,
+                        estimated_cost_avoided_usd,
+                        provider_confirmed_cost_avoided_usd,
+                    ),
+                )
+            self._conn.commit()
+
+    def query_gateway_summary(self) -> dict[str, object]:
+        """Return metadata-only gateway reconciliation totals across token_metrics and cost_metrics."""
+        with self._lock:
+            row = self._conn.execute(
+                """
+                SELECT
+                    COUNT(r.id) AS total_runs,
+                    COALESCE(SUM(m.original_tokens), 0) AS total_preflight_original_tokens,
+                    COALESCE(SUM(m.optimized_tokens), 0) AS total_preflight_optimized_tokens,
+                    COALESCE(SUM(m.tokens_saved), 0) AS total_preflight_tokens_saved,
+                    COALESCE(SUM(m.provider_confirmed_input_tokens), 0) AS total_provider_confirmed_input_tokens,
+                    COUNT(m.provider_confirmed_input_tokens) AS reconciled_runs,
+                    COALESCE(SUM(c.estimated_cost_avoided_usd), 0.0) AS total_estimated_cost_avoided_usd,
+                    COALESCE(SUM(c.provider_confirmed_cost_avoided_usd), 0.0) AS total_confirmed_cost_avoided_usd
+                FROM optimization_runs r
+                JOIN token_metrics m ON m.run_id = r.id
+                LEFT JOIN cost_metrics c ON c.run_id = r.id
+                WHERE r.integration = 'gateway'
+                """
+            ).fetchone()
+        return {
+            "total_runs": int(row["total_runs"]),
+            "reconciled_runs": int(row["reconciled_runs"]),
+            "total_preflight_original_tokens": int(row["total_preflight_original_tokens"]),
+            "total_preflight_optimized_tokens": int(row["total_preflight_optimized_tokens"]),
+            "total_preflight_tokens_saved": int(row["total_preflight_tokens_saved"]),
+            "total_provider_confirmed_input_tokens": int(row["total_provider_confirmed_input_tokens"]),
+            "total_estimated_cost_avoided_usd": round(float(row["total_estimated_cost_avoided_usd"]), 8),
+            "total_confirmed_cost_avoided_usd": round(float(row["total_confirmed_cost_avoided_usd"]), 8),
+        }
+
     def query_metrics(
         self,
         *,
