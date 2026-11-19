@@ -1,7 +1,8 @@
 # ADR-0008: Local SQLite Schema and Cloud PostgreSQL Sync Boundaries
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-18
+- **Ratified:** 2026-11-19 (Phase 9 — PostgreSQL schema & opt-in cloud sync boundary implemented and verified)
 - **Review Date:** 2027-03-01
 - **Owners:** Project T Architecture
 - **Related Master Doc Sections:** Sections 5, 10, 11, 13, 14, 17
@@ -58,4 +59,8 @@ Using a cloud database as a prerequisite breaks offline operation and privacy de
 
 ## Review Triggers
 
-- Review on **2027-03-01** ahead of MVP v0.5 (`services/cloud-sync` and PostgreSQL schema implementation).
+- Reviewed and accepted in Phase 9 (**2026-11-19**):
+  - Implemented PostgreSQL cloud-eligible migration ([001_initial_cloud_schema.sql](../architecture/schema.sql) -> `infrastructure/database/postgres/001_initial_cloud_schema.sql`) omitting `project_profiles`, `context_fingerprints`, `workspace_lexical_index` (`fts5`), and deferred `pgvector`.
+  - Verified metadata-only boundary validator in `services/` rejecting raw prompts, code, terminal logs, filesystem paths, API secrets, and low-entropy content hashes across `POST /api/cloud/v1/sync/*`.
+  - Confirmed `(installation_id, run_id)` idempotent upserts and full offline independence of `apps/local-runtime`.
+- Next scheduled review: **2027-03-01**.

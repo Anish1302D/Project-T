@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-t-cloud-services"
+version = "0.5.0"
+description = "Project T optional cloud control plane: auth, metadata-only sync, and multi-device analytics"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.0",
+    "psycopg[binary]>=3.2.0",
+    "PyJWT>=2.8.0",
+    "httpx>=0.27.0",
+    "project-t-contracts>=0.1.0",
+    "project-t-provider-adapters>=0.1.0",
+]
+
+[project.scripts]
+project-t-cloud = "project_t_cloud_services.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
