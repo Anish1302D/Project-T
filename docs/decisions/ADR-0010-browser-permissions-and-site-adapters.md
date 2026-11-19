@@ -1,6 +1,6 @@
 # ADR-0010: Browser Permissions and Supported Website Adapter Strategy
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-18
 - **Review Date:** 2027-03-01
 - **Owners:** Project T Architecture
