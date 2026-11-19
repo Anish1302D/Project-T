@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import uuid
@@ -12,13 +13,27 @@ from typing import Any
 
 from project_t_provider_adapters import ProviderRegistry
 
-_POSTGRES_SCHEMA_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "infrastructure"
-    / "database"
-    / "postgres"
-    / "001_initial_cloud_schema.sql"
-)
+
+def _resolve_postgres_schema_path() -> Path:
+    env_path = os.environ.get("PROJECT_T_PG_SCHEMA_PATH")
+    if env_path:
+        return Path(env_path)
+    candidates = [
+        Path(__file__).resolve().parents[3]
+        / "infrastructure"
+        / "database"
+        / "postgres"
+        / "001_initial_cloud_schema.sql",
+        Path.cwd() / "infrastructure" / "database" / "postgres" / "001_initial_cloud_schema.sql",
+        Path("/app/infrastructure/database/postgres/001_initial_cloud_schema.sql"),
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+_POSTGRES_SCHEMA_PATH = _resolve_postgres_schema_path()
 
 _SQLITE_CLOUD_DDL = """
 PRAGMA foreign_keys = ON;
@@ -259,9 +274,11 @@ class CloudDatabase:
     def initialize(self, registry: ProviderRegistry) -> None:
         with self._lock:
             if self._is_pg:
-                ddl = self._postgres_schema_path.read_text(encoding="utf-8")
-                with self._conn.cursor() as cur:
-                    cur.execute(ddl)
+                existing = self._fetchone("SELECT to_regclass('public.users') AS tbl")
+                if existing is None or existing.get("tbl") is None:
+                    ddl = self._postgres_schema_path.read_text(encoding="utf-8")
+                    with self._conn.cursor() as cur:
+                        cur.execute(ddl)
             else:
                 self._conn.executescript(_SQLITE_CLOUD_DDL)
                 self._conn.execute("PRAGMA foreign_keys = ON;")
