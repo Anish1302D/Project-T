@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Project T Token Optimizer",
+  "version": "0.4.0",
+  "description": "Local-first, user-triggered prompt optimization and token preview for supported AI web interfaces.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "http://127.0.0.1:4765/*",
+    "http://localhost:4765/*"
+  ],
+  "background": {
+    "service_worker": "serviceWorker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*"
+      ],
+      "js": ["contentScript.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Project T Token Optimizer"
+  },
+  "options_page": "options.html"
+}

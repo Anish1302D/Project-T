@@ -12,10 +12,12 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:e2e": "node tests/e2e/browser-extension.e2e.mjs",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "playwright": "^1.65.1",
     "turbo": "^2.5.0",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"

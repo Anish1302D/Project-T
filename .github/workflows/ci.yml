@@ -55,3 +55,7 @@ jobs:
           pnpm turbo run typecheck
           pnpm turbo run build
           pnpm turbo run test
+      - name: Install Playwright Chromium & run browser extension E2E
+        run: |
+          pnpm exec playwright install chromium
+          pnpm run test:e2e

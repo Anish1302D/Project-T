@@ -1,0 +1,116 @@
+.pt-trigger-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483640;
+  background: #111827;
+  color: #f9fafb;
+  border: 1px solid #374151;
+  border-radius: 9999px;
+  padding: 8px 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pt-trigger-btn:hover {
+  background: #1f2937;
+}
+
+.pt-review-overlay {
+  position: fixed;
+  right: 20px;
+  bottom: 64px;
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  z-index: 2147483641;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.pt-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pt-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.pt-diff-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.pt-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pt-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pt-btn-primary {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #ffffff;
+}
+
+.pt-popup-body,
+.pt-options-body {
+  margin: 0;
+  padding: 14px;
+  min-width: 340px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+}
+
+.pt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.pt-input {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
