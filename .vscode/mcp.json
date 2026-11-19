@@ -1,0 +1,22 @@
+{
+  "inputs": [
+    {
+      "id": "projectTRuntimeToken",
+      "type": "promptString",
+      "description": "Project T Local Runtime bearer token (run: .\\.venv\\Scripts\\python.exe -m project_t_local_runtime status --reveal-token)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "project-t": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/apps/mcp-server/dist/index.js"],
+      "env": {
+        "PROJECT_T_RUNTIME_URL": "http://127.0.0.1:4765/api/v1",
+        "PROJECT_T_RUNTIME_TOKEN": "${input:projectTRuntimeToken}",
+        "PROJECT_T_APPROVED_WORKSPACES": "${workspaceFolder}"
+      }
+    }
+  }
+}
