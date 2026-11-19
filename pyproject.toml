@@ -28,5 +28,6 @@ pythonpath = [
     "packages/optimization-core/src",
     "packages/provider-adapters/src",
     "apps/local-runtime/src",
+    "apps/api-gateway/src",
 ]
 addopts = "-ra -q"

@@ -135,6 +135,7 @@ class BenchmarkEvaluator:
             ("conversation", self._eval_text_category),
             ("log", self._eval_log_category),
             ("repository", self._eval_repository_category),
+            ("api", self._eval_api_category),
         ]:
             dataset_path = self._datasets_dir / f"{cat_name}.jsonl"
             if not dataset_path.exists():
@@ -315,6 +316,149 @@ class BenchmarkEvaluator:
                     warnings=tuple(sel.warnings),
                 )
             )
+        return results
+
+    def _eval_api_category(
+        self,
+        category: str,
+        rows: list[dict[str, Any]],
+    ) -> list[CaseEvaluation]:
+        import tempfile
+
+        import httpx
+        from fastapi.testclient import TestClient
+
+        from project_t_api_gateway import (
+            GatewayConfig,
+            create_gateway_app,
+            verify_provider_payload_invariance,
+        )
+
+        # Use deterministic BPE token counter to simulate provider-confirmed input token accounting
+        tokenizer = ProviderRegistry(allow_tiktoken=True).resolve_tokenizer("openai")
+        sent_bodies: list[dict[str, Any]] = []
+
+        def _counting_upstream(request: httpx.Request) -> httpx.Response:
+            body = json.loads(request.content.decode("utf-8"))
+            sent_bodies.append(body)
+            serialized = json.dumps(body, sort_keys=True, ensure_ascii=False)
+            confirmed_tokens = tokenizer.count_text(serialized, "gpt-4o").count
+            url = str(request.url)
+            if "/v1/chat/completions" in url:
+                return httpx.Response(
+                    200,
+                    json={
+                        "id": "bench_oai",
+                        "usage": {"prompt_tokens": confirmed_tokens, "completion_tokens": 8},
+                    },
+                )
+            if "/v1/messages" in url:
+                return httpx.Response(
+                    200,
+                    json={
+                        "id": "bench_ant",
+                        "usage": {"input_tokens": confirmed_tokens, "output_tokens": 8},
+                    },
+                )
+            return httpx.Response(
+                200,
+                json={
+                    "candidates": [{"content": {"parts": [{"text": "ok"}]}}],
+                    "usageMetadata": {"promptTokenCount": confirmed_tokens},
+                },
+            )
+
+        results: list[CaseEvaluation] = []
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            app = create_gateway_app(
+                config=GatewayConfig(
+                    data_dir=tmp_path,
+                    db_path=tmp_path / "api_benchmark.db",
+                    allow_tiktoken=True,
+                ),
+                upstream_transport=httpx.MockTransport(_counting_upstream),
+            )
+            with TestClient(app) as client:
+                for row in rows:
+                    provider = row["provider"]
+                    endpoint = row["endpoint"]
+                    payload = row["payload"]
+                    eligible = bool(row.get("eligible", True))
+
+                    # 1. Baseline pass-through via X-ProjectT-Bypass
+                    base_resp = client.post(
+                        endpoint,
+                        json=payload,
+                        headers={"X-ProjectT-Bypass": "true"},
+                    )
+                    base_json = base_resp.json()
+                    if provider == "openai":
+                        base_confirmed = int(base_json["usage"]["prompt_tokens"])
+                    elif provider == "anthropic":
+                        base_confirmed = int(base_json["usage"]["input_tokens"])
+                    else:
+                        base_confirmed = int(base_json["usageMetadata"]["promptTokenCount"])
+
+                    # 2. Gateway-optimized paired run
+                    t0 = time.perf_counter()
+                    opt_resp = client.post(endpoint, json=payload)
+                    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+                    opt_json = opt_resp.json()
+                    forwarded_payload = sent_bodies[-1]
+
+                    if provider == "openai":
+                        opt_confirmed = int(opt_json["usage"]["prompt_tokens"])
+                    elif provider == "anthropic":
+                        opt_confirmed = int(opt_json["usage"]["input_tokens"])
+                    else:
+                        opt_confirmed = int(opt_json["usageMetadata"]["promptTokenCount"])
+
+                    invariant_ok, _ = verify_provider_payload_invariance(
+                        provider, payload, forwarded_payload
+                    )
+                    forwarded_dump = json.dumps(forwarded_payload, ensure_ascii=False)
+                    expected_subs = list(row.get("required_substrings", []))
+                    subs_ok = all(sub in forwarded_dump for sub in expected_subs)
+
+                    saved = max(0, base_confirmed - opt_confirmed)
+                    reduction = (
+                        round((saved / base_confirmed) * 100.0, 2) if base_confirmed > 0 else 0.0
+                    )
+                    gw_status = opt_resp.headers.get("X-ProjectT-Status", "unchanged")
+                    status = (
+                        OptimizationStatus.VALIDATED.value
+                        if gw_status == "optimized"
+                        else OptimizationStatus.FALLBACK_NO_SAVINGS.value
+                    )
+                    assertions_ok = (
+                        opt_resp.status_code == 200
+                        and invariant_ok
+                        and subs_ok
+                        and (not eligible or opt_confirmed < base_confirmed)
+                    )
+
+                    results.append(
+                        CaseEvaluation(
+                            case_id=row["id"],
+                            category=category,
+                            eligible=eligible,
+                            original_tokens=base_confirmed,
+                            optimized_tokens=opt_confirmed,
+                            tokens_saved=saved,
+                            reduction_percentage=reduction,
+                            accuracy="exact",
+                            status=status,
+                            latency_ms=round(elapsed_ms, 3),
+                            constraints_ok=invariant_ok and subs_ok,
+                            identifiers_ok=subs_ok,
+                            structure_ok=invariant_ok,
+                            assertions_ok=assertions_ok,
+                            methods=(f"gateway_{provider}",),
+                            warnings=(),
+                        )
+                    )
+
         return results
 
     def _eval_latency_category(self) -> list[CaseEvaluation]:

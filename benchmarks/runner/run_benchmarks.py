@@ -12,6 +12,8 @@ for pkg_src in (
     ROOT / "packages" / "contracts" / "src",
     ROOT / "packages" / "optimization-core" / "src",
     ROOT / "packages" / "provider-adapters" / "src",
+    ROOT / "apps" / "local-runtime" / "src",
+    ROOT / "apps" / "api-gateway" / "src",
     ROOT,
 ):
     if str(pkg_src) not in sys.path:

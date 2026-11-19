@@ -1,4 +1,4 @@
-"""Versioned provider/model metadata, tokenizer resolver, and pricing registry."""
+"""Versioned provider/model metadata, tokenizer resolver, and decoupled pricing registry."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from ..openai import OpenAITokenizerAdapter
 
 @dataclass(frozen=True, slots=True)
 class ModelMetadata:
-    """Versioned model capabilities and decoupled pricing metadata."""
+    """Versioned model capabilities and decoupled pricing metadata (USD per 1M tokens)."""
 
     provider_id: str
     model_name: str
@@ -34,6 +34,15 @@ class ProviderMetadata:
     models: tuple[ModelMetadata, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class CostAttribution:
+    """Versioned cost avoided estimate/confirmed attribution."""
+
+    pricing_version: str
+    estimated_cost_avoided_usd: float
+    provider_confirmed_cost_avoided_usd: float | None = None
+
+
 DEFAULT_PRICING_VERSION = "2026-11-v1"
 
 _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
@@ -48,6 +57,9 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
                 context_window=128000,
                 supports_exact_local_count=False,
                 pricing_version=DEFAULT_PRICING_VERSION,
+                input_cost_per_1m_usd=0.0,
+                cached_input_cost_per_1m_usd=0.0,
+                output_cost_per_1m_usd=0.0,
             ),
         ),
     ),
@@ -62,6 +74,9 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
                 context_window=128000,
                 supports_exact_local_count=True,
                 pricing_version=DEFAULT_PRICING_VERSION,
+                input_cost_per_1m_usd=2.50,
+                cached_input_cost_per_1m_usd=1.25,
+                output_cost_per_1m_usd=10.00,
             ),
             ModelMetadata(
                 provider_id="openai",
@@ -70,6 +85,9 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
                 context_window=128000,
                 supports_exact_local_count=True,
                 pricing_version=DEFAULT_PRICING_VERSION,
+                input_cost_per_1m_usd=0.15,
+                cached_input_cost_per_1m_usd=0.075,
+                output_cost_per_1m_usd=0.60,
             ),
             ModelMetadata(
                 provider_id="openai",
@@ -78,6 +96,9 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
                 context_window=1047576,
                 supports_exact_local_count=True,
                 pricing_version=DEFAULT_PRICING_VERSION,
+                input_cost_per_1m_usd=2.00,
+                cached_input_cost_per_1m_usd=0.50,
+                output_cost_per_1m_usd=8.00,
             ),
         ),
     ),
@@ -92,6 +113,9 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
                 context_window=200000,
                 supports_exact_local_count=False,
                 pricing_version=DEFAULT_PRICING_VERSION,
+                input_cost_per_1m_usd=3.00,
+                cached_input_cost_per_1m_usd=0.30,
+                output_cost_per_1m_usd=15.00,
             ),
         ),
     ),
@@ -106,6 +130,9 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
                 context_window=1048576,
                 supports_exact_local_count=False,
                 pricing_version=DEFAULT_PRICING_VERSION,
+                input_cost_per_1m_usd=1.25,
+                cached_input_cost_per_1m_usd=0.3125,
+                output_cost_per_1m_usd=10.00,
             ),
         ),
     ),
@@ -113,7 +140,7 @@ _DEFAULT_CATALOG: tuple[ProviderMetadata, ...] = (
 
 
 class ProviderRegistry:
-    """Resolves providers/models to tokenizer adapters and catalog metadata."""
+    """Resolves providers/models to tokenizer adapters, catalog metadata, and cost attribution."""
 
     def __init__(
         self,
@@ -141,9 +168,56 @@ class ProviderRegistry:
         if entry is None:
             return None
         for m in entry.models:
-            if m.model_name == model:
+            if m.model_name == model or model.startswith(f"{m.model_name}-"):
                 return m
         return None
+
+    def calculate_cost_avoided(
+        self,
+        *,
+        provider: str,
+        model: str,
+        estimated_tokens_saved: int,
+        confirmed_tokens_saved: int | None = None,
+        cached_tokens: int = 0,
+    ) -> CostAttribution | None:
+        """
+        Compute versioned USD cost avoided from token savings without embedding pricing in engine core.
+
+        Returns None when no pricing record is registered for (provider, model).
+        """
+        meta = self.get_model_metadata(provider, model)
+        if meta is None or meta.input_cost_per_1m_usd is None:
+            return None
+
+        rate = meta.input_cost_per_1m_usd / 1_000_000.0
+        cached_rate = (
+            meta.cached_input_cost_per_1m_usd / 1_000_000.0
+            if meta.cached_input_cost_per_1m_usd is not None
+            else rate
+        )
+
+        # Conservative attribution: cached tokens save only at cached rate if applicable
+        def _tokens_to_usd(saved: int) -> float:
+            if saved <= 0:
+                return 0.0
+            if cached_tokens > 0:
+                non_cached = max(0, saved - cached_tokens)
+                cached_part = min(saved, cached_tokens)
+                return round(non_cached * rate + cached_part * cached_rate, 8)
+            return round(saved * rate, 8)
+
+        est_usd = _tokens_to_usd(estimated_tokens_saved)
+        conf_usd = (
+            _tokens_to_usd(confirmed_tokens_saved)
+            if confirmed_tokens_saved is not None
+            else None
+        )
+        return CostAttribution(
+            pricing_version=meta.pricing_version,
+            estimated_cost_avoided_usd=est_usd,
+            provider_confirmed_cost_avoided_usd=conf_usd,
+        )
 
     def list_catalog_entries(self) -> list[ProviderCatalogEntry]:
         return [
