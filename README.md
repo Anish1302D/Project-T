@@ -2,17 +2,20 @@
 
 Model-independent, local-first, quality-aware token optimization platform across prompts, workspace context, terminal logs, MCP tools, browser extensions, and API gateways.
 
-> **Current Phase:** Week 1 Foundation (`packages/contracts`, monorepo tooling, and CI checks). See [Implementation Plan](./docs/implementation-plan.md).
+> **Release `v1.0.0`:** All MVP components implemented and verified across Python, TypeScript, and Playwright E2E suites. See [Implementation Plan](./docs/implementation-plan.md) and [Roadmap & Limitations](./docs/architecture/roadmap-mvp-and-limitations.md).
 
 ---
 
 ## Repository Layout
 
-- `docs/` — [Master Architecture](./docs/token-optimization-platform-architecture.md), detailed specs, OpenAPI/JSON schemas, SQLite/PostgreSQL DDL, and ADRs 0001–0012
-- `packages/` — Shared libraries (`contracts`, `shared-utils`, `shared-ui`, and upcoming `optimization-core` and `provider-adapters`)
-- `apps/` — Integrations and runtimes (`local-runtime`, `vscode-extension`, `mcp-server`, `browser-extension`, `api-gateway`, `dashboard`)
-- `scripts/` — Contract parity verification and engineering automation
-- `tests/` — Cross-cutting unit, integration, security, E2E, and regression suites
+- `docs/` — [Master Architecture](./docs/token-optimization-platform-architecture.md), detailed specs, OpenAPI/JSON schemas, SQLite/PostgreSQL DDL, and accepted ADRs 0001–0012
+- `packages/` — Core libraries (`contracts`, `optimization-core`, `provider-adapters`, `shared-utils`, `shared-ui`)
+- `apps/` — Runtimes and integrations (`local-runtime`, `vscode-extension`, `mcp-server`, `browser-extension`, `api-gateway`, `dashboard`)
+- `services/` — Optional cloud control plane (`authentication`, `cloud_sync`, `analytics`)
+- `benchmarks/` — Reproducible 8-category & paired evaluation runners, datasets, and reports
+- `infrastructure/` — SQLite/PostgreSQL migrations and Docker packaging (`docker-compose.yml`)
+- `scripts/` — Contract parity verification (`verify_contracts.py`) and release packager (`package_release.py`)
+- `tests/` — Cross-cutting unit, integration, security (threat-model & sync boundaries), E2E, and regression suites
 
 ---
 
